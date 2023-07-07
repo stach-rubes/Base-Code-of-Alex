@@ -1,0 +1,49 @@
+const { google } = require('googleapis');
+const ExcelJS = require('exceljs');
+
+// Set up Google Sheets API credentials
+const auth = new google.auth.GoogleAuth({
+  // Add your credentials here
+});
+
+// Fetch data from Google Sheets
+const sheets = google.sheets({ version: 'v4', auth });
+const spreadsheetId = 'YOUR_SPREADSHEET_ID';
+const range = 'Sheet1!A:C';
+
+sheets.spreadsheets.values.get({
+  spreadsheetId,
+  range,
+}, (err, res) => {
+  if (err) return console.log('The API returned an error: ' + err);
+
+  const rows = res.data.values;
+  if (rows.length) {
+    let sum = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const num1 = parseFloat(row[0]);
+      const num2 = parseFloat(row[1]);
+      const num3 = parseFloat(row[2]);
+      sum += num1 + num2 + num3;
+    }
+    const average = sum / (rows.length * 3);
+
+    // Create a new Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
+    worksheet.getCell('A1').value = 'Average';
+    worksheet.getCell('B1').value = average;
+
+    // Save the Excel workbook to a file or provide as a download
+    workbook.xlsx.writeFile('output.xlsx')
+      .then(() => {
+        console.log('Excel file created successfully!');
+      })
+      .catch((error) => {
+        console.log('An error occurred while creating the Excel file: ' + error);
+      });
+  } else {
+    console.log('No data found.');
+  }
+});
